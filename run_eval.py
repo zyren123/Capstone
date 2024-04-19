@@ -167,6 +167,7 @@ def evaluate(gt, pred, candidate, criterion=None):
             ["yes/no accuracy", closed_score * 100],
         ],
         headers=["Metric", "Performance"],
+        tablefmt="fancy_grid",
     )
 
 
