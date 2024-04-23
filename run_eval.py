@@ -40,6 +40,12 @@ def parse_option():
         default="prediction_answer.json",
         help="path to prediction file",
     )
+    parser.add_argument(
+        "strategy",
+        type=str,
+        default="exactly",
+        help="strategy to evaluate the Closed question",
+    )
     args, unparsed = parser.parse_known_args()
     return args
 
@@ -52,7 +58,7 @@ def load_jsonl(path):
     return data
 
 
-def evaluate(gt, pred, candidate, criterion=None):
+def evaluate(gt, pred, candidate, strategy, criterion=None):
     closed_scores = collections.defaultdict(list)
     bleu_scores = collections.defaultdict(list)
     exact_scores = collections.defaultdict(list)
@@ -131,15 +137,25 @@ def evaluate(gt, pred, candidate, criterion=None):
             #         closed_scores["hit"].append(0)
             # else:
             #     closed_scores["hit"].append(0)
-
-            if pred_value == gt_value:
-                closed_scores["hit"].append(1)
-            elif "yes" in pred_value and "yes" in gt_value:
-                closed_scores["hit"].append(1)
-            elif "no" in pred_value and "no" in gt_value:
-                closed_scores["hit"].append(1)
+            if strategy == "exactly":
+                if pred_value == gt_value:
+                    closed_scores["hit"].append(1)
+                else:
+                    closed_scores["hit"].append(0)
+            elif strategy == "include":
+                if gt_value in pred_value:
+                    closed_scores["hit"].append(1)
+                else:
+                    closed_scores["hit"].append(0)
             else:
-                closed_scores["hit"].append(0)
+                if pred_value == gt_value:
+                    closed_scores["hit"].append(1)
+                elif "yes" in pred_value and "yes" in gt_value:
+                    closed_scores["hit"].append(1)
+                elif "no" in pred_value and "no" in gt_value:
+                    closed_scores["hit"].append(1)
+                else:
+                    closed_scores["hit"].append(0)
 
     # import pdb; pdb.set_trace()
     exact_score = sum(exact_scores["hit"]) / len(exact_scores["hit"])
@@ -198,5 +214,5 @@ if __name__ == "__main__":
     # assert gt_ids == pred_ids, "please make sure pred and gt are exactly matched"
 
     # perform evaluation
-    results = evaluate(gt, pred, candidate)
+    results = evaluate(gt, pred, candidate, strategy=args.strategy)
     print(results)
