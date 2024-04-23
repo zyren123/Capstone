@@ -24,11 +24,19 @@ Clone 这个 project
   pip install -r requirements.txt 
 ```
 
-启动评估
+启动评估(完全匹配)
 
 ```bash
 python run_eval.py --gt prediction_answer.json ^
     --pred prediction_answer.json ^
     --candidate candidate.json
 ```
+(包含匹配)
+```bash
+python run_eval.py --gt prediction_answer.json ^
+    --pred prediction_answer.json ^
+    --candidate candidate.json ^
+    --strategy include
+```
+
 
