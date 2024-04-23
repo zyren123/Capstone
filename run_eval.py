@@ -147,7 +147,7 @@ def evaluate(gt, pred, candidate, strategy, criterion=None):
                     closed_scores["hit"].append(1)
                 else:
                     closed_scores["hit"].append(0)
-            else:
+            elif strategy == "loose":
                 if pred_value == gt_value:
                     closed_scores["hit"].append(1)
                 elif "yes" in pred_value and "yes" in gt_value:
@@ -156,6 +156,8 @@ def evaluate(gt, pred, candidate, strategy, criterion=None):
                     closed_scores["hit"].append(1)
                 else:
                     closed_scores["hit"].append(0)
+            else:
+                raise ValueError("Invalid strategy")
 
     # import pdb; pdb.set_trace()
     exact_score = sum(exact_scores["hit"]) / len(exact_scores["hit"])
