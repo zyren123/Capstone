@@ -124,11 +124,20 @@ def evaluate(gt, pred, candidate, criterion=None):
         elif gt_item["answer_type"] == "CLOSED":
             # for close-ended question (Yes/No)
             # closed_scores['q_id'].append(pred_item['question_id'])
-            if "yes" in pred_value or "no" in pred_value:
-                if gt_value in pred_value:
-                    closed_scores["hit"].append(1)
-                else:
-                    closed_scores["hit"].append(0)
+            # if "yes" in pred_value or "no" in pred_value:
+            #     if gt_value in pred_value:
+            #         closed_scores["hit"].append(1)
+            #     else:
+            #         closed_scores["hit"].append(0)
+            # else:
+            #     closed_scores["hit"].append(0)
+
+            if pred_value == gt_value:
+                closed_scores["hit"].append(1)
+            elif "yes" in pred_value and "yes" in gt_value:
+                closed_scores["hit"].append(1)
+            elif "no" in pred_value and "no" in gt_value:
+                closed_scores["hit"].append(1)
             else:
                 closed_scores["hit"].append(0)
 
