@@ -209,7 +209,7 @@ def evaluate(gt, pred, candidate, strategy, postprocess, criterion=None):
 
     num_open, num_close = len(closed_scores["hit"]), len(open_hit_scores["hit"])
     print(f"num_open {num_open} || num_close {num_close}")
-
+    print(f"Matching strategy: {strategy}, postprocess: {postprocess}")
     return tabulate(
         [
             ["exact match score", exact_score * 100],
