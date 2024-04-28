@@ -46,6 +46,7 @@ def parse_option():
         "--strategy",
         type=str,
         default="exactly",
+        choices=["exactly", "include", "loose"],
         help="strategy to evaluate the Closed question",
     )
     parser.add_argument(
