@@ -1,19 +1,21 @@
 import argparse
-import json
 import collections
+import json
 import random
+import warnings
+
 import pandas as pd
-from nltk.translate.bleu_score import sentence_bleu
 from eval_metrics.evaluate_metrics import (
-    calculate_exactmatch,
-    calculate_f1score,
+    argmax,
     bleu,
     calculate_appearance_with_normalization,
+    calculate_exactmatch,
+    calculate_f1score,
 )
-from tabulate import tabulate
 from eval_metrics.glossary import *
-
-import warnings
+from nltk.translate.bleu_score import sentence_bleu
+from sentence_transformers import SentenceTransformer, util
+from tabulate import tabulate
 
 warnings.simplefilter("ignore")
 
@@ -41,10 +43,17 @@ def parse_option():
         help="path to prediction file",
     )
     parser.add_argument(
-        "strategy",
+        "--strategy",
         type=str,
         default="exactly",
         help="strategy to evaluate the Closed question",
+    )
+    parser.add_argument(
+        "--postprocess",
+        type=str,
+        default="False",
+        choices=["False", "Close", "Open", "Both"],
+        help="whether to postprocess the prediction",
     )
     args, unparsed = parser.parse_known_args()
     return args
@@ -58,13 +67,34 @@ def load_jsonl(path):
     return data
 
 
-def evaluate(gt, pred, candidate, strategy, criterion=None):
+def evaluate(gt, pred, candidate, strategy, postprocess, criterion=None):
     closed_scores = collections.defaultdict(list)
     bleu_scores = collections.defaultdict(list)
     exact_scores = collections.defaultdict(list)
     f1_scores = collections.defaultdict(list)
     open_hit_scores = collections.defaultdict(list)
 
+    def preprocess(pred_item):
+        pred_value = pred_item["generated"]
+        pred_value = normalize_word(pred_value)
+        pred_embedding = model.encode(pred_value, convert_to_tensor=True)
+        similarity = util.pytorch_cos_sim(pred_embedding, candidate_embeddings)
+        max_index = argmax(list(similarity.squeeze()))
+        replaced_value = candidate_options[max_index]
+        pred_item["generated"] = replaced_value
+
+    if postprocess.lower() != "false":
+        candidate_options = candidate["0"]
+        model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        candidate_embeddings = model.encode(candidate_options, convert_to_tensor=True)
+        for pred_item in pred:
+            answer_type = pred_item["answer_type"].lower()
+            if postprocess.lower() == "close" and answer_type == "closed":
+                preprocess(pred_item)
+            elif postprocess.lower() == "open" and answer_type == "open":
+                preprocess(pred_item)
+            elif postprocess.lower() == "both":
+                preprocess(pred_item)
     for gt_item, pred_item in zip(gt, pred):
         # try:
         #     gt_results = gt_item['conversations']
@@ -76,7 +106,7 @@ def evaluate(gt, pred, candidate, strategy, criterion=None):
         gt_value = normalize_word(gt_value)
         pred_value = normalize_word(pred_value)
 
-        if gt_item["answer_type"] == "OPEN":
+        if gt_item["answer_type"].lower() == "open":
             # for open-ended question
             # if gt_value in pred_value:
             #     hit = 1.0
@@ -127,7 +157,7 @@ def evaluate(gt, pred, candidate, strategy, criterion=None):
             bleu_scores["bleu_score_2"].append(b_score_2)
             bleu_scores["bleu_score_3"].append(b_score_3)
 
-        elif gt_item["answer_type"] == "CLOSED":
+        elif gt_item["answer_type"].lower() == "closed":
             # for close-ended question (Yes/No)
             # closed_scores['q_id'].append(pred_item['question_id'])
             # if "yes" in pred_value or "no" in pred_value:
@@ -216,5 +246,7 @@ if __name__ == "__main__":
     # assert gt_ids == pred_ids, "please make sure pred and gt are exactly matched"
 
     # perform evaluation
-    results = evaluate(gt, pred, candidate, strategy=args.strategy)
+    results = evaluate(
+        gt, pred, candidate, strategy=args.strategy, postprocess=args.postprocess
+    )
     print(results)
