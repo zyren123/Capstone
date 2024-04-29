@@ -56,6 +56,13 @@ def parse_option():
         choices=["False", "Close", "Open", "Both"],
         help="whether to postprocess the prediction",
     )
+
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        help="model name",
+    )
     args, unparsed = parser.parse_known_args()
     return args
 
@@ -68,7 +75,7 @@ def load_jsonl(path):
     return data
 
 
-def evaluate(gt, pred, candidate, strategy, postprocess, criterion=None):
+def evaluate(gt, pred, candidate, strategy, postprocess, model, criterion=None):
     closed_scores = collections.defaultdict(list)
     bleu_scores = collections.defaultdict(list)
     exact_scores = collections.defaultdict(list)
@@ -86,7 +93,7 @@ def evaluate(gt, pred, candidate, strategy, postprocess, criterion=None):
 
     if postprocess.lower() != "false":
         candidate_options = candidate["0"]
-        model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        model = SentenceTransformer(model)
         candidate_embeddings = model.encode(candidate_options, convert_to_tensor=True)
         for pred_item in pred:
             answer_type = pred_item["answer_type"].lower()
@@ -248,6 +255,11 @@ if __name__ == "__main__":
 
     # perform evaluation
     results = evaluate(
-        gt, pred, candidate, strategy=args.strategy, postprocess=args.postprocess
+        gt,
+        pred,
+        candidate,
+        strategy=args.strategy,
+        postprocess=args.postprocess,
+        model=args.model,
     )
     print(results)
