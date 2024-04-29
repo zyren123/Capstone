@@ -60,5 +60,13 @@ python run_eval.py --gt prediction_answer.json ^
     --postprocess Both
 ```
 
+(指定使用的sentence transformer模型，按照hf中的名字为准，例如默认模型为"sentence-transformers/all-MiniLM-L6-v2",这里指定为其他模型)
+```bash
+python run_eval.py --gt prediction_answer.json ^
+    --pred prediction_answer.json ^
+    --candidate candidate.json ^
+    --model sentence-transformers/all-mpnet-base-v2
+```
+
 ## 也可以使用run.bat脚本，修改run.bat脚本中的参数并执行脚本
 
