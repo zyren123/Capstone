@@ -49,7 +49,7 @@ python run_eval.py --gt prediction_answer.json ^
 python run_eval.py --gt prediction_answer.json ^
     --pred prediction_answer.json ^
     --candidate candidate.json ^
-    --postprocess Closed
+    --postprocess Close
 ```
 
 (使用sentence_trasnformer对所有问题进行postprocess)
